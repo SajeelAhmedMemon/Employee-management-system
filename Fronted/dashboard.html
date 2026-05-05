@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMS — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --black: #0f0f0f; --gray-600: #6b6b6b; --gray-400: #a0a0a0;
+    --gray-200: #e8e8e8; --gray-100: #f4f4f4; --white: #ffffff;
+    --success-bg: #f0faf5; --success-text: #1a7a4a; --success-border: #a8dfc0;
+    --error-bg: #fdf2f2; --error-text: #c0392b;
+    --warn-bg: #fffbeb; --warn-text: #b45309;
+    --blue-bg: #eff6ff; --blue-text: #1d4ed8;
+    --radius: 8px; --font: 'DM Sans', sans-serif; --mono: 'DM Mono', monospace; --sidebar: 220px;
+  }
+  html, body { height: 100%; font-family: var(--font); background: var(--gray-100); color: var(--black); -webkit-font-smoothing: antialiased; }
+  .layout { display: grid; grid-template-columns: var(--sidebar) 1fr; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar { background: var(--white); border-right: 1px solid var(--gray-200); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+  .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 20px 20px 16px; border-bottom: 1px solid var(--gray-200); }
+  .brand-icon { width: 28px; height: 28px; background: var(--black); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .brand-icon svg { width: 14px; height: 14px; }
+  .brand-name { font-size: 13px; font-weight: 500; }
+  .sidebar-nav { padding: 12px 10px; flex: 1; }
+  .nav-label { font-size: 10px; font-weight: 500; color: var(--gray-400); letter-spacing: 0.08em; text-transform: uppercase; padding: 0 10px; margin: 16px 0 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; font-size: 13px; color: var(--gray-600); text-decoration: none; transition: background 0.12s, color 0.12s; margin-bottom: 1px; }
+  .nav-item:hover { background: var(--gray-100); color: var(--black); }
+  .nav-item.active { background: var(--gray-100); color: var(--black); font-weight: 500; }
+  .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.6; }
+  .nav-item.active svg { opacity: 1; }
+  .sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--gray-200); }
+  .user-row { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 30px; height: 30px; background: var(--black); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; color: var(--white); flex-shrink: 0; }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 12px; font-weight: 500; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role-text { font-size: 11px; color: var(--gray-400); }
+  .logout-btn { background: none; border: none; cursor: pointer; padding: 4px; color: var(--gray-400); }
+  .logout-btn:hover { color: var(--black); }
+  .logout-btn svg { width: 14px; height: 14px; display: block; }
+
+  /* Main */
+  .main { display: flex; flex-direction: column; }
+  .topbar { background: var(--white); border-bottom: 1px solid var(--gray-200); padding: 0 28px; height: 56px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .topbar-title { font-size: 15px; font-weight: 500; }
+  .topbar-date { font-size: 12px; color: var(--gray-400); font-family: var(--mono); }
+
+  .content { padding: 24px 28px; flex: 1; overflow-y: auto; }
+
+  /* Welcome banner */
+  .welcome { background: var(--black); border-radius: var(--radius); padding: 24px 28px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+  .welcome-text h2 { font-size: 18px; font-weight: 500; color: var(--white); margin-bottom: 4px; }
+  .welcome-text p { font-size: 13px; color: rgba(255,255,255,0.45); }
+  .welcome-badge { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 8px 14px; font-size: 12px; color: rgba(255,255,255,0.6); font-family: var(--mono); }
+
+  /* KPI cards */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .kpi-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 18px 20px; position: relative; overflow: hidden; animation: fadeUp 0.4s ease both; }
+  .kpi-card:nth-child(1) { animation-delay: 0.05s; }
+  .kpi-card:nth-child(2) { animation-delay: 0.10s; }
+  .kpi-card:nth-child(3) { animation-delay: 0.15s; }
+  .kpi-card:nth-child(4) { animation-delay: 0.20s; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .kpi-label { font-size: 11px; color: var(--gray-400); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 8px; }
+  .kpi-value { font-size: 32px; font-weight: 500; color: var(--black); font-family: var(--mono); line-height: 1; margin-bottom: 6px; }
+  .kpi-sub { font-size: 12px; color: var(--gray-400); }
+  .kpi-icon { position: absolute; right: 16px; top: 16px; width: 32px; height: 32px; background: var(--gray-100); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .kpi-icon svg { width: 15px; height: 15px; color: var(--gray-600); }
+  .kpi-card.green .kpi-value { color: var(--success-text); }
+  .kpi-card.red .kpi-value { color: var(--error-text); }
+  .kpi-card.amber .kpi-value { color: var(--warn-text); }
+
+  /* Charts grid */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .chart-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 20px; }
+  .chart-card.full { grid-column: 1 / -1; }
+  .chart-title { font-size: 13px; font-weight: 500; color: var(--black); margin-bottom: 4px; }
+  .chart-sub { font-size: 11px; color: var(--gray-400); margin-bottom: 20px; }
+
+  /* Bar chart */
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 140px; padding-bottom: 24px; position: relative; }
+  .bar-chart::after { content: ''; position: absolute; bottom: 24px; left: 0; right: 0; height: 1px; background: var(--gray-200); }
+  .bar-group { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.6s cubic-bezier(0.34,1.56,0.64,1); cursor: pointer; position: relative; min-height: 2px; }
+  .bar:hover { opacity: 0.8; }
+  .bar-label { font-size: 10px; color: var(--gray-400); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .bar-val { font-size: 10px; color: var(--gray-600); font-family: var(--mono); font-weight: 500; }
+
+  /* Donut chart */
+  .donut-wrap { display: flex; align-items: center; gap: 24px; }
+  .donut-svg { flex-shrink: 0; }
+  .donut-legend { display: flex; flex-direction: column; gap: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .legend-label { font-size: 12px; color: var(--gray-600); }
+  .legend-val { font-size: 12px; font-weight: 500; color: var(--black); font-family: var(--mono); margin-left: auto; padding-left: 16px; }
+
+  /* Horizontal bar */
+  .hbar-list { display: flex; flex-direction: column; gap: 12px; }
+  .hbar-item { display: flex; flex-direction: column; gap: 4px; }
+  .hbar-top { display: flex; justify-content: space-between; font-size: 12px; }
+  .hbar-name { color: var(--black); font-weight: 500; }
+  .hbar-count { color: var(--gray-400); font-family: var(--mono); }
+  .hbar-track { height: 6px; background: var(--gray-100); border-radius: 3px; overflow: hidden; }
+  .hbar-fill { height: 100%; border-radius: 3px; background: var(--black); transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1); }
+
+  /* Recent activity */
+  .activity-list { display: flex; flex-direction: column; }
+  .activity-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--gray-200); }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .activity-dot.insert { background: var(--success-text); }
+  .activity-dot.update { background: var(--blue-text); }
+  .activity-dot.deactivate { background: var(--warn-text); }
+  .activity-dot.delete { background: var(--error-text); }
+  .activity-text { font-size: 13px; color: var(--black); }
+  .activity-time { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+  /* Quick links */
+  .quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .quick-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 10px; text-decoration: none; transition: border-color 0.15s, background 0.15s; }
+  .quick-card:hover { border-color: var(--black); background: #fafafa; }
+  .quick-icon { width: 32px; height: 32px; background: var(--gray-100); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .quick-icon svg { width: 14px; height: 14px; color: var(--gray-600); }
+  .quick-label { font-size: 13px; font-weight: 500; color: var(--black); }
+  .quick-sub { font-size: 11px; color: var(--gray-400); }
+
+  /* Leave status summary */
+  .leave-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .leave-box { background: var(--gray-100); border-radius: 6px; padding: 12px 14px; text-align: center; }
+  .leave-box-val { font-size: 22px; font-weight: 500; font-family: var(--mono); }
+  .leave-box-label { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+  .leave-box.pending .leave-box-val { color: var(--warn-text); }
+  .leave-box.approved .leave-box-val { color: var(--success-text); }
+  .leave-box.rejected .leave-box-val { color: var(--error-text); }
+
+  body.viewer .admin-only { display: none !important; }
+  @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } .charts-grid { grid-template-columns: 1fr; } .quick-grid { grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1.2" fill="white"/><rect x="8" y="1" width="5" height="5" rx="1.2" fill="white"/><rect x="1" y="8" width="5" height="5" rx="1.2" fill="white"/><rect x="8" y="8" width="5" height="5" rx="1.2" fill="white" opacity="0.3"/></svg>
+      </div>
+      <span class="brand-name">EMS</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Main</div>
+      <a href="dashboard.html" class="nav-item active">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="employees.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="2.5"/><path d="M1 13c0-2.76 2.24-5 5-5h1M11 10v4M9 12h4"/></svg>
+        Employees
+      </a>
+      <a href="departments.html" class="nav-item admin-only">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="6" width="4" height="8" rx="1"/><rect x="6" y="3" width="4" height="11" rx="1"/><rect x="11" y="1" width="4" height="13" rx="1"/></svg>
+        Departments
+      </a>
+      <a href="leaves.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 2v2M11 2v2M2 7h12"/></svg>
+        Leave Requests
+      </a>
+      <a href="attendance.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+        Attendance
+      </a>
+      <a href="payroll.html" class="nav-item admin-only">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M1 7h14M5 11h2M10 11h1"/></svg>
+        Payroll
+      </a>
+      <div class="nav-label">Reports</div>
+      <a href="#" class="nav-item admin-only" onclick="exportSummary()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M10 2v4h4M6 9l2 2 2-2M8 11V7"/></svg>
+        Export Summary
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-row">
+        <div class="avatar" id="avatarInitials">?</div>
+        <div class="user-info">
+          <div class="user-name" id="userName">Loading...</div>
+          <div class="user-role-text" id="userRole">—</div>
+        </div>
+        <button class="logout-btn" onclick="logout()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title">Dashboard</span>
+      <span class="topbar-date" id="topbarDate"></span>
+    </div>
+
+    <div class="content">
+
+      <!-- Welcome -->
+      <div class="welcome">
+        <div class="welcome-text">
+          <h2 id="welcomeMsg">Good morning!</h2>
+          <p>Here's what's happening across your organization today.</p>
+        </div>
+        <div class="welcome-badge" id="todayBadge"></div>
+      </div>
+
+      <!-- Quick links -->
+      <div class="quick-grid admin-only">
+        <a href="employees.html" class="quick-card">
+          <div class="quick-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="2.5"/><path d="M1 13c0-2.76 2.24-5 5-5h1M11 10v4M9 12h4"/></svg></div>
+          <div><div class="quick-label">Add Employee</div><div class="quick-sub">Onboard new staff</div></div>
+        </a>
+        <a href="attendance.html" class="quick-card">
+          <div class="quick-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg></div>
+          <div><div class="quick-label">Mark Attendance</div><div class="quick-sub">Today's record</div></div>
+        </a>
+        <a href="leaves.html" class="quick-card">
+          <div class="quick-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 2v2M11 2v2M2 7h12"/></svg></div>
+          <div><div class="quick-label">Review Leaves</div><div class="quick-sub">Pending approvals</div></div>
+        </a>
+        <a href="payroll.html" class="quick-card">
+          <div class="quick-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M1 7h14M5 11h2M10 11h1"/></svg></div>
+          <div><div class="quick-label">Run Payroll</div><div class="quick-sub">Generate payslips</div></div>
+        </a>
+      </div>
+
+      <!-- KPI cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="2.5"/><path d="M1 13c0-2.76 2.24-5 5-5h4a4 4 0 0 1 4 4"/></svg></div>
+          <div class="kpi-label">Total Employees</div>
+          <div class="kpi-value" id="kpiTotal">—</div>
+          <div class="kpi-sub" id="kpiTotalSub">Loading...</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l4 4 8-8"/></svg></div>
+          <div class="kpi-label">Present Today</div>
+          <div class="kpi-value" id="kpiPresent">—</div>
+          <div class="kpi-sub" id="kpiPresentSub">Loading...</div>
+        </div>
+        <div class="kpi-card amber">
+          <div class="kpi-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 2v2M11 2v2M2 7h12"/></svg></div>
+          <div class="kpi-label">Pending Leaves</div>
+          <div class="kpi-value" id="kpiLeaves">—</div>
+          <div class="kpi-sub">Awaiting approval</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="6" width="4" height="8" rx="1"/><rect x="6" y="3" width="4" height="11" rx="1"/><rect x="11" y="1" width="4" height="13" rx="1"/></svg></div>
+          <div class="kpi-label">Departments</div>
+          <div class="kpi-value" id="kpiDepts">—</div>
+          <div class="kpi-sub">Active teams</div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="charts-grid">
+
+        <!-- Employees by department bar chart -->
+        <div class="chart-card">
+          <div class="chart-title">Employees by Department</div>
+          <div class="chart-sub">Headcount across all departments</div>
+          <div class="bar-chart" id="deptBarChart"></div>
+        </div>
+
+        <!-- Employee status donut -->
+        <div class="chart-card">
+          <div class="chart-title">Employee Status</div>
+          <div class="chart-sub">Active vs inactive breakdown</div>
+          <div class="donut-wrap">
+            <svg class="donut-svg" width="120" height="120" viewBox="0 0 120 120">
+              <circle id="donutBg" cx="60" cy="60" r="48" fill="none" stroke="var(--gray-100)" stroke-width="18"/>
+              <circle id="donutActive" cx="60" cy="60" r="48" fill="none" stroke="#1a7a4a" stroke-width="18" stroke-linecap="round" stroke-dasharray="0 302" transform="rotate(-90 60 60)" style="transition:stroke-dasharray 0.8s ease"/>
+              <text x="60" y="56" text-anchor="middle" font-family="DM Mono" font-size="18" font-weight="500" fill="var(--black)" id="donutPct">—</text>
+              <text x="60" y="70" text-anchor="middle" font-family="DM Sans" font-size="10" fill="var(--gray-400)">active</text>
+            </svg>
+            <div class="donut-legend" id="donutLegend"></div>
+          </div>
+        </div>
+
+        <!-- Attendance today horizontal bars -->
+        <div class="chart-card">
+          <div class="chart-title">Today's Attendance</div>
+          <div class="chart-sub">Breakdown by status</div>
+          <div class="hbar-list" id="attHbars"></div>
+        </div>
+
+        <!-- Leave requests summary -->
+        <div class="chart-card">
+          <div class="chart-title">Leave Requests</div>
+          <div class="chart-sub">All time summary</div>
+          <div class="leave-summary" id="leaveSummary">
+            <div class="leave-box pending"><div class="leave-box-val" id="leavePending">—</div><div class="leave-box-label">Pending</div></div>
+            <div class="leave-box approved"><div class="leave-box-val" id="leaveApproved">—</div><div class="leave-box-label">Approved</div></div>
+            <div class="leave-box rejected"><div class="leave-box-val" id="leaveRejected">—</div><div class="leave-box-label">Rejected</div></div>
+          </div>
+          <div style="margin-top:16px">
+            <div class="chart-sub" style="margin-bottom:10px">By leave type</div>
+            <div class="hbar-list" id="leaveTypeHbars"></div>
+          </div>
+        </div>
+
+        <!-- Recent activity -->
+        <div class="chart-card full">
+          <div class="chart-title">Recent Activity</div>
+          <div class="chart-sub">Latest changes in the system</div>
+          <div class="activity-list" id="activityList">
+            <div style="text-align:center;padding:24px;color:var(--gray-400);font-size:13px">Loading...</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = 'http://localhost:3000/api';
+  const token    = localStorage.getItem('ems_token');
+  const role     = localStorage.getItem('ems_role') || 'viewer';
+  if (!token) window.location.href = 'login.html';
+  if (role === 'viewer') document.body.classList.add('viewer');
+
+  const userObj = JSON.parse(localStorage.getItem('ems_user') || '{}');
+  const uEmail  = userObj.email || '';
+  document.getElementById('avatarInitials').textContent = uEmail.slice(0,2).toUpperCase();
+  document.getElementById('userName').textContent = uEmail;
+  document.getElementById('userRole').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+
+  // Date and greeting
+  const now   = new Date();
+  const today = now.toISOString().split('T')[0];
+  const hour  = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('welcomeMsg').textContent = `${greeting}!`;
+  document.getElementById('topbarDate').textContent = now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('todayBadge').textContent = now.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+
+  async function apiFetch(path) {
+    const res = await fetch(`${API_BASE}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    });
+    if (res.status === 401) { logout(); return null; }
+    return res.json();
+  }
+
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  async function loadDashboard() {
+    // Fetch all data in parallel
+    const [empData, deptData, leaveData, attData, auditData] = await Promise.all([
+      apiFetch('/employees'),
+      apiFetch('/departments'),
+      apiFetch('/leaves'),
+      apiFetch('/attendance/stats'),
+      apiFetch('/employees') // reuse for activity
+    ]);
+
+    const employees   = empData?.data   || [];
+    const departments = deptData?.data  || [];
+    const leaves      = leaveData?.data || [];
+    const attStats    = attData?.data   || {};
+
+    // KPI cards
+    const active   = employees.filter(e => e.status === 'active').length;
+    const inactive = employees.filter(e => e.status === 'inactive').length;
+    const pending  = leaves.filter(l => l.status === 'pending').length;
+
+    document.getElementById('kpiTotal').textContent      = employees.length;
+    document.getElementById('kpiTotalSub').textContent   = `${active} active, ${inactive} inactive`;
+    document.getElementById('kpiPresent').textContent    = attStats.present ?? '—';
+    document.getElementById('kpiPresentSub').textContent = `of ${attStats.total_employees || employees.length} employees`;
+    document.getElementById('kpiLeaves').textContent     = pending;
+    document.getElementById('kpiDepts').textContent      = departments.length;
+
+    // Department bar chart
+    renderDeptBars(departments, employees);
+
+    // Donut chart
+    renderDonut(active, inactive, employees.length);
+
+    // Attendance horizontal bars
+    renderAttBars(attStats, employees.length);
+
+    // Leave summary
+    document.getElementById('leavePending').textContent  = leaves.filter(l => l.status === 'pending').length;
+    document.getElementById('leaveApproved').textContent = leaves.filter(l => l.status === 'approved').length;
+    document.getElementById('leaveRejected').textContent = leaves.filter(l => l.status === 'rejected').length;
+    renderLeaveTypeBars(leaves);
+
+    // Recent audit activity — fetch separately
+    loadActivity();
+  }
+
+  function renderDeptBars(departments, employees) {
+    const chart = document.getElementById('deptBarChart');
+    if (!departments.length) { chart.innerHTML = '<div style="color:var(--gray-400);font-size:12px;margin:auto">No departments</div>'; return; }
+
+    const counts = departments.map(d => ({
+      name:  d.name,
+      count: employees.filter(e => String(e.department_id) === String(d.id)).length
+    })).sort((a,b) => b.count - a.count);
+
+    const max = Math.max(...counts.map(d => d.count), 1);
+    const colors = ['#0f0f0f','#374151','#6b7280','#9ca3af','#d1d5db'];
+
+    chart.innerHTML = counts.map((d, i) => {
+      const pct = Math.round((d.count / max) * 100);
+      return `<div class="bar-group">
+        <span class="bar-val">${d.count}</span>
+        <div class="bar" style="height:${Math.max(pct, 4)}%;background:${colors[Math.min(i,4)]}" title="${esc(d.name)}: ${d.count}"></div>
+        <span class="bar-label">${esc(d.name.split(' ')[0])}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderDonut(active, inactive, total) {
+    const pct      = total > 0 ? Math.round((active / total) * 100) : 0;
+    const circumference = 2 * Math.PI * 48;
+    const dash     = (pct / 100) * circumference;
+    document.getElementById('donutActive').setAttribute('stroke-dasharray', `${dash} ${circumference}`);
+    document.getElementById('donutPct').textContent = `${pct}%`;
+    document.getElementById('donutLegend').innerHTML = `
+      <div class="legend-item"><div class="legend-dot" style="background:#1a7a4a"></div><span class="legend-label">Active</span><span class="legend-val">${active}</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gray-200)"></div><span class="legend-label">Inactive</span><span class="legend-val">${inactive}</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--black)"></div><span class="legend-label">Total</span><span class="legend-val">${active+inactive}</span></div>
+    `;
+  }
+
+  function renderAttBars(stats, totalEmp) {
+    const container = document.getElementById('attHbars');
+    if (!stats.total_employees) {
+      container.innerHTML = '<div style="color:var(--gray-400);font-size:12px">No attendance marked today</div>';
+      return;
+    }
+    const items = [
+      { label: 'Present',  count: stats.present  || 0, color: '#1a7a4a' },
+      { label: 'Absent',   count: stats.absent   || 0, color: '#c0392b' },
+      { label: 'Late',     count: stats.late     || 0, color: '#b45309' },
+      { label: 'On Leave', count: stats.on_leave || 0, color: '#1d4ed8' },
+      { label: 'Not Marked', count: stats.not_marked || 0, color: '#d1d5db' },
+    ];
+    const max = Math.max(...items.map(i => i.count), 1);
+    container.innerHTML = items.map(i => `
+      <div class="hbar-item">
+        <div class="hbar-top"><span class="hbar-name">${i.label}</span><span class="hbar-count">${i.count}</span></div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:${Math.round(i.count/max*100)}%;background:${i.color}"></div></div>
+      </div>`).join('');
+  }
+
+  function renderLeaveTypeBars(leaves) {
+    const types = {};
+    leaves.forEach(l => { types[l.leave_type] = (types[l.leave_type]||0) + 1; });
+    const sorted = Object.entries(types).sort((a,b) => b[1]-a[1]);
+    const max = Math.max(...sorted.map(([,v]) => v), 1);
+    document.getElementById('leaveTypeHbars').innerHTML = sorted.map(([type, count]) => `
+      <div class="hbar-item">
+        <div class="hbar-top"><span class="hbar-name">${esc(type)}</span><span class="hbar-count">${count}</span></div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:${Math.round(count/max*100)}%"></div></div>
+      </div>`).join('') || '<div style="color:var(--gray-400);font-size:12px">No leave requests</div>';
+  }
+
+  async function loadActivity() {
+    // Fetch audit logs via employees endpoint workaround
+    const res = await fetch(`${API_BASE}/employees`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) return;
+
+    // Use a direct audit log fetch if available, otherwise show placeholder
+    const container = document.getElementById('activityList');
+
+    // Fetch recent employees as proxy for recent activity
+    const empRes = await apiFetch('/employees');
+    const emps   = empRes?.data || [];
+
+    if (!emps.length) {
+      container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--gray-400);font-size:13px">No activity recorded yet</div>';
+      return;
+    }
+
+    // Show recently added employees as activity
+    const recent = [...emps].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8);
+    container.innerHTML = recent.map(e => {
+      const time = new Date(e.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+      return `<div class="activity-item">
+        <div class="activity-dot insert"></div>
+        <div>
+          <div class="activity-text">${esc(e.full_name)} was added as ${esc(e.designation||'Employee')}</div>
+          <div class="activity-time">${time}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function exportSummary() {
+    // Trigger a full summary CSV export
+    apiFetch('/employees').then(empData => {
+      apiFetch('/departments').then(deptData => {
+        const emps  = empData?.data  || [];
+        const depts = deptData?.data || [];
+
+        const lines = [
+          'EMS Summary Report',
+          `Generated: ${new Date().toLocaleDateString('en-GB')}`,
+          '',
+          'EMPLOYEES',
+          `Total,${emps.length}`,
+          `Active,${emps.filter(e=>e.status==='active').length}`,
+          `Inactive,${emps.filter(e=>e.status==='inactive').length}`,
+          '',
+          'DEPARTMENTS',
+          ...depts.map(d => `${d.name},${d.employee_count||0} employees`),
+        ];
+
+        const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url; a.download = 'ems_summary_report.csv'; a.click();
+        URL.revokeObjectURL(url);
+      });
+    });
+  }
+
+  function logout() {
+    ['ems_token','ems_role','ems_user'].forEach(k => localStorage.removeItem(k));
+    window.location.href = 'login.html';
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

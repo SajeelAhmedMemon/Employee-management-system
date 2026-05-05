@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMS — Employee Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black: #0f0f0f;
+    --gray-600: #6b6b6b;
+    --gray-400: #a0a0a0;
+    --gray-200: #e8e8e8;
+    --gray-100: #f4f4f4;
+    --white: #ffffff;
+    --success-bg: #f0faf5; --success-text: #1a7a4a; --success-border: #a8dfc0;
+    --error-bg: #fdf2f2;   --error-text: #c0392b;   --error-border: #f0b8b8;
+    --radius: 8px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --sidebar: 220px;
+  }
+
+  html, body { height: 100%; font-family: var(--font); background: var(--gray-100); color: var(--black); -webkit-font-smoothing: antialiased; }
+  .layout { display: grid; grid-template-columns: var(--sidebar) 1fr; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar { background: var(--white); border-right: 1px solid var(--gray-200); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+  .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 20px 20px 16px; border-bottom: 1px solid var(--gray-200); }
+  .brand-icon { width: 28px; height: 28px; background: var(--black); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .brand-icon svg { width: 14px; height: 14px; }
+  .brand-name { font-size: 13px; font-weight: 500; color: var(--black); }
+  .sidebar-nav { padding: 12px 10px; flex: 1; }
+  .nav-label { font-size: 10px; font-weight: 500; color: var(--gray-400); letter-spacing: 0.08em; text-transform: uppercase; padding: 0 10px; margin: 16px 0 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; font-size: 13px; color: var(--gray-600); cursor: pointer; text-decoration: none; transition: background 0.12s, color 0.12s; margin-bottom: 1px; }
+  .nav-item:hover { background: var(--gray-100); color: var(--black); }
+  .nav-item.active { background: var(--gray-100); color: var(--black); font-weight: 500; }
+  .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.6; }
+  .nav-item.active svg { opacity: 1; }
+  .sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--gray-200); }
+  .user-row { display: flex; align-items: center; gap: 10px; }
+  .avatar-sm { width: 30px; height: 30px; background: var(--black); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; color: var(--white); flex-shrink: 0; }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 12px; font-weight: 500; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role-label { font-size: 11px; color: var(--gray-400); }
+  .logout-btn { background: none; border: none; cursor: pointer; padding: 4px; color: var(--gray-400); transition: color 0.15s; }
+  .logout-btn:hover { color: var(--black); }
+  .logout-btn svg { width: 14px; height: 14px; display: block; }
+
+  /* Main */
+  .main { display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { background: var(--white); border-bottom: 1px solid var(--gray-200); padding: 0 28px; height: 56px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .back-btn { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--gray-600); text-decoration: none; transition: color 0.15s; border: none; background: none; cursor: pointer; padding: 0; font-family: var(--font); }
+  .back-btn:hover { color: var(--black); }
+  .back-btn svg { width: 14px; height: 14px; }
+  .topbar-divider { width: 1px; height: 16px; background: var(--gray-200); }
+  .topbar-title { font-size: 15px; font-weight: 500; color: var(--black); }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+  .btn-primary { height: 34px; padding: 0 16px; background: var(--black); color: var(--white); border: none; border-radius: 6px; font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: opacity 0.15s; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-secondary { height: 34px; padding: 0 14px; background: none; color: var(--gray-600); border: 1px solid var(--gray-200); border-radius: 6px; font-family: var(--font); font-size: 13px; cursor: pointer; transition: border-color 0.15s, color 0.15s, background 0.15s; display: flex; align-items: center; gap: 6px; }
+  .btn-secondary:hover { border-color: var(--black); color: var(--black); background: var(--gray-100); }
+  .btn-danger-outline { height: 34px; padding: 0 14px; background: none; color: var(--error-text); border: 1px solid var(--error-border); border-radius: 6px; font-family: var(--font); font-size: 13px; cursor: pointer; transition: background 0.15s; display: flex; align-items: center; gap: 6px; }
+  .btn-danger-outline:hover { background: var(--error-bg); }
+  .btn-danger { height: 34px; padding: 0 16px; background: var(--error-text); color: var(--white); border: none; border-radius: 6px; font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+  .btn-danger:hover { opacity: 0.85; }
+
+  /* Content */
+  .content { padding: 28px; flex: 1; overflow-y: auto; }
+
+  .profile-grid { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; }
+
+  /* Left card — identity */
+  .identity-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  .profile-avatar {
+    width: 72px; height: 72px;
+    background: var(--black);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--white);
+    letter-spacing: -0.02em;
+  }
+
+  .profile-name { font-size: 18px; font-weight: 500; color: var(--black); }
+  .profile-desig { font-size: 13px; color: var(--gray-600); margin-top: -10px; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .badge-active   { background: var(--success-bg); color: var(--success-text); }
+  .badge-inactive { background: var(--gray-100);   color: var(--gray-400); }
+
+  .identity-divider { width: 100%; height: 1px; background: var(--gray-200); }
+
+  .identity-meta { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+
+  .meta-row { display: flex; align-items: center; gap: 10px; }
+  .meta-icon { width: 28px; height: 28px; background: var(--gray-100); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .meta-icon svg { width: 13px; height: 13px; color: var(--gray-600); }
+  .meta-content { text-align: left; min-width: 0; }
+  .meta-label { font-size: 10px; color: var(--gray-400); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+  .meta-value { font-size: 13px; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .identity-actions { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+  .identity-actions .btn-primary,
+  .identity-actions .btn-danger-outline { width: 100%; justify-content: center; }
+
+  /* Right — details */
+  .details-col { display: flex; flex-direction: column; gap: 16px; animation: fadeUp 0.35s ease both; }
+
+  .detail-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .detail-card-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--gray-200);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray-600);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .detail-rows { padding: 4px 0; }
+
+  .detail-row {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--gray-200);
+    font-size: 13px;
+  }
+
+  .detail-row:last-child { border-bottom: none; }
+
+  .detail-key { color: var(--gray-600); }
+  .detail-val { color: var(--black); font-weight: 500; word-break: break-all; }
+  .detail-val.mono { font-family: var(--mono); font-size: 12px; }
+  .detail-val.muted { color: var(--gray-400); font-weight: 400; }
+
+  /* Audit log */
+  .audit-list { padding: 0; }
+  .audit-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--gray-200); }
+  .audit-item:last-child { border-bottom: none; }
+  .audit-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray-200); margin-top: 4px; flex-shrink: 0; }
+  .audit-dot.insert { background: var(--success-text); }
+  .audit-dot.update { background: #2980b9; }
+  .audit-dot.deactivate { background: #e67e22; }
+  .audit-dot.delete { background: var(--error-text); }
+  .audit-action { font-size: 13px; color: var(--black); font-weight: 500; }
+  .audit-time { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+  .audit-empty { padding: 20px; font-size: 13px; color: var(--gray-400); text-align: center; }
+
+  /* Edit modal */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--white); border-radius: 12px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; animation: modalIn 0.2s ease; }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(-10px) scale(0.98); } to { opacity: 1; transform: none; } }
+  .modal-header { padding: 20px 24px 0; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-title { font-size: 16px; font-weight: 500; }
+  .modal-close { width: 28px; height: 28px; background: var(--gray-100); border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .modal-close:hover { background: var(--gray-200); }
+  .modal-close svg { width: 14px; height: 14px; }
+  .modal-body { padding: 0 24px; }
+  .modal-footer { padding: 20px 24px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--gray-200); margin-top: 20px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11px; font-weight: 500; color: var(--gray-600); letter-spacing: 0.04em; text-transform: uppercase; }
+  .field input, .field select { height: 38px; border: 1px solid var(--gray-200); border-radius: 6px; padding: 0 11px; font-family: var(--font); font-size: 13px; color: var(--black); background: var(--white); outline: none; transition: border-color 0.15s; width: 100%; }
+  .field input:focus, .field select:focus { border-color: var(--black); }
+
+  .confirm-body { padding: 0 24px; }
+  .confirm-text { font-size: 14px; color: var(--gray-600); line-height: 1.6; }
+  .confirm-name { font-weight: 500; color: var(--black); }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 16px; border-radius: var(--radius); font-size: 13px; z-index: 999; opacity: 0; transform: translateY(12px); transition: opacity 0.25s, transform 0.25s; display: flex; align-items: center; gap: 10px; max-width: 320px; border: 1px solid transparent; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: var(--success-bg); color: var(--success-text); border-color: var(--success-border); }
+  .toast.error   { background: var(--error-bg);   color: var(--error-text);   border-color: var(--error-border); }
+  .toast svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  /* Skeleton loader */
+  .skeleton { background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-200) 50%, var(--gray-100) 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 4px; }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  body.viewer .admin-only { display: none !important; }
+
+  @media (max-width: 900px) { .profile-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1.2" fill="white"/><rect x="8" y="1" width="5" height="5" rx="1.2" fill="white"/><rect x="1" y="8" width="5" height="5" rx="1.2" fill="white"/><rect x="8" y="8" width="5" height="5" rx="1.2" fill="white" opacity="0.3"/></svg>
+      </div>
+      <span class="brand-name">EMS</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Main</div>
+      <a href="dashboard.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="employees.html" class="nav-item active">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="2.5"/><path d="M1 13c0-2.76 2.24-5 5-5h1M11 10v4M9 12h4"/></svg>
+        Employees
+      </a>
+      <a href="departments.html" class="nav-item admin-only">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="6" width="4" height="8" rx="1"/><rect x="6" y="3" width="4" height="11" rx="1"/><rect x="11" y="1" width="4" height="13" rx="1"/></svg>
+        Departments
+      </a>
+      <a href="leaves.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 2v2M11 2v2M2 7h12"/></svg>
+        Leave Requests
+      </a>
+      <a href="attendance.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+        Attendance
+      </a>
+      <a href="payroll.html" class="nav-item admin-only">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M1 7h14M5 11h2M10 11h1"/></svg>
+        Payroll
+      </a>
+      <div class="nav-label">Reports</div>
+      <a href="#" class="nav-item admin-only">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M10 2v4h4M6 9l2 2 2-2M8 11V7"/></svg>
+        Export CSV
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-row">
+        <div class="avatar-sm" id="avatarInitials">?</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebarUserName">Loading...</div>
+          <div class="user-role-label" id="sidebarUserRole">—</div>
+        </div>
+        <button class="logout-btn" onclick="logout()" title="Sign out">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="back-btn" onclick="window.location.href='employees.html'">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8l5 5"/></svg>
+          Employees
+        </button>
+        <div class="topbar-divider"></div>
+        <span class="topbar-title" id="topbarName">Profile</span>
+      </div>
+      <div class="topbar-right admin-only">
+        <button class="btn-secondary" onclick="openEditModal()">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2l3 3-8 8H3v-3l8-8z"/></svg>
+          Edit
+        </button>
+        <button class="btn-danger-outline" onclick="openConfirm()">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/></svg>
+          Deactivate
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="profile-grid" id="profileGrid">
+        <!-- Populated by JS -->
+        <div style="text-align:center;padding:60px;color:var(--gray-400);grid-column:1/-1;font-size:13px">Loading profile...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Edit employee</span>
+      <button class="modal-close" onclick="closeModal('editModal')">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field full">
+          <label>Full name</label>
+          <input type="text" id="fName" placeholder="Ali Hassan">
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="fEmail" placeholder="ali@company.com">
+        </div>
+        <div class="field">
+          <label>Phone</label>
+          <input type="text" id="fPhone" placeholder="+92 300 0000000">
+        </div>
+        <div class="field">
+          <label>Department</label>
+          <select id="fDept"><option value="">Select department</option></select>
+        </div>
+        <div class="field">
+          <label>Designation</label>
+          <input type="text" id="fDesig" placeholder="Software Engineer">
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="fStatus">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('editModal')">Cancel</button>
+      <button class="btn-primary" id="saveBtn" onclick="saveEmployee()">
+        <span id="saveBtnText">Save changes</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Deactivate Confirm Modal -->
+<div class="overlay" id="confirmModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <span class="modal-title">Deactivate employee</span>
+      <button class="modal-close" onclick="closeModal('confirmModal')">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+      </button>
+    </div>
+    <div class="confirm-body">
+      <p class="confirm-text">Are you sure you want to deactivate <span class="confirm-name" id="confirmName"></span>? Their record will be kept but marked as inactive.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
+      <button class="btn-danger" onclick="confirmDeactivate()">Deactivate</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <svg id="toastIcon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"></svg>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+  const API_BASE = 'http://localhost:3000/api';
+
+  const token = localStorage.getItem('ems_token');
+  const role  = localStorage.getItem('ems_role') || 'viewer';
+  if (!token) window.location.href = 'login.html';
+  if (role === 'viewer') document.body.classList.add('viewer');
+
+  const userObj = JSON.parse(localStorage.getItem('ems_user') || '{}');
+  const uEmail  = userObj.email || '';
+  document.getElementById('avatarInitials').textContent  = uEmail.slice(0,2).toUpperCase();
+  document.getElementById('sidebarUserName').textContent = uEmail;
+  document.getElementById('sidebarUserRole').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+
+  // Get employee ID from URL: profile.html?id=xxx
+  const params = new URLSearchParams(window.location.search);
+  const empId  = params.get('id');
+  if (!empId) window.location.href = 'employees.html';
+
+  let employee    = null;
+  let departments = [];
+  let auditLogs   = [];
+
+  /* ── Toast ── */
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    document.getElementById('toastIcon').innerHTML  = type === 'success'
+      ? '<path d="M2 8l4 4 8-8"/>'
+      : '<path d="M3 3l10 10M13 3L3 13"/>';
+    t.className = 'toast ' + type;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+
+  /* ── API helper ── */
+  async function apiFetch(path, opts = {}) {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...opts,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...(opts.headers || {})
+      }
+    });
+    if (res.status === 401) { logout(); return null; }
+    return res;
+  }
+
+  /* ── Load ── */
+  async function loadAll() {
+    const [eRes, dRes] = await Promise.all([
+      apiFetch(`/employees/${empId}`),
+      apiFetch('/departments')
+    ]);
+
+    if (!eRes || !dRes) return;
+
+    const eJson = await eRes.json();
+    if (eJson.status === 'error') { window.location.href = 'employees.html'; return; }
+    employee    = eJson.data;
+    auditLogs   = eJson.audit_logs || [];
+    const dJson = await dRes.json();
+    departments = dJson.data || [];
+
+    renderProfile();
+    populateEditForm();
+  }
+
+  function renderProfile() {
+    const e        = employee;
+    const deptName = e.department_name || '—';
+    const initials = e.full_name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+    const joinDate = e.created_at ? new Date(e.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' }) : '—';
+
+    document.getElementById('topbarName').textContent = e.full_name;
+    document.getElementById('confirmName').textContent = e.full_name;
+
+    const auditHTML = auditLogs.length
+      ? auditLogs.map(a => {
+          const type = a.action_type?.toLowerCase() || 'update';
+          const time = new Date(a.created_at).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+          const label = { insert:'Record created', update:'Record updated', deactivate:'Deactivated', delete:'Record deleted' }[type] || a.action_type;
+          return `<div class="audit-item">
+            <div class="audit-dot ${type}"></div>
+            <div>
+              <div class="audit-action">${esc(label)}</div>
+              <div class="audit-time">${time}</div>
+            </div>
+          </div>`;
+        }).join('')
+      : '<div class="audit-empty">No activity recorded yet.</div>';
+
+    document.getElementById('profileGrid').innerHTML = `
+      <!-- Left: Identity card -->
+      <div class="identity-card">
+        <div class="profile-avatar">${initials}</div>
+        <div>
+          <div class="profile-name">${esc(e.full_name)}</div>
+          <div class="profile-desig">${esc(e.designation || '—')}</div>
+        </div>
+        <span class="badge badge-${e.status}">${e.status}</span>
+
+        <div class="identity-divider"></div>
+
+        <div class="identity-meta">
+          <div class="meta-row">
+            <div class="meta-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l6 5 6-5M2 4h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4z"/></svg>
+            </div>
+            <div class="meta-content">
+              <div class="meta-label">Email</div>
+              <div class="meta-value">${esc(e.email)}</div>
+            </div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3c0 0 .5 2 2 3.5S9 9 9 9l1.5-1.5 3 3S12 13 10 13C6 13 3 10 3 6V3z"/></svg>
+            </div>
+            <div class="meta-content">
+              <div class="meta-label">Phone</div>
+              <div class="meta-value">${esc(e.phone || '—')}</div>
+            </div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="6" width="4" height="8" rx="1"/><rect x="6" y="3" width="4" height="11" rx="1"/><rect x="11" y="1" width="4" height="13" rx="1"/></svg>
+            </div>
+            <div class="meta-content">
+              <div class="meta-label">Department</div>
+              <div class="meta-value">${esc(deptName)}</div>
+            </div>
+          </div>
+          <div class="meta-row">
+            <div class="meta-icon">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 2v2M11 2v2M2 7h12"/></svg>
+            </div>
+            <div class="meta-content">
+              <div class="meta-label">Joined</div>
+              <div class="meta-value">${joinDate}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="identity-divider"></div>
+
+        <div class="identity-actions admin-only">
+          <button class="btn-primary" onclick="openEditModal()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2l3 3-8 8H3v-3l8-8z"/></svg>
+            Edit employee
+          </button>
+          <button class="btn-danger-outline" onclick="openConfirm()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/></svg>
+            Deactivate
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Details -->
+      <div class="details-col">
+
+        <div class="detail-card">
+          <div class="detail-card-header">Job details</div>
+          <div class="detail-rows">
+            <div class="detail-row"><span class="detail-key">Full name</span><span class="detail-val">${esc(e.full_name)}</span></div>
+            <div class="detail-row"><span class="detail-key">Designation</span><span class="detail-val">${esc(e.designation || '—')}</span></div>
+            <div class="detail-row"><span class="detail-key">Department</span><span class="detail-val">${esc(deptName)}</span></div>
+            <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val"><span class="badge badge-${e.status}">${e.status}</span></span></div>
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <div class="detail-card-header">Contact information</div>
+          <div class="detail-rows">
+            <div class="detail-row"><span class="detail-key">Email address</span><span class="detail-val">${esc(e.email)}</span></div>
+            <div class="detail-row"><span class="detail-key">Phone number</span><span class="detail-val ${e.phone ? '' : 'muted'}">${esc(e.phone || 'Not provided')}</span></div>
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <div class="detail-card-header">System information</div>
+          <div class="detail-rows">
+            <div class="detail-row"><span class="detail-key">Employee ID</span><span class="detail-val mono">${esc(e.id)}</span></div>
+            <div class="detail-row"><span class="detail-key">Date added</span><span class="detail-val">${joinDate}</span></div>
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <div class="detail-card-header">Activity log</div>
+          <div class="audit-list">${auditHTML}</div>
+        </div>
+
+      </div>
+    `;
+  }
+
+  /* ── Edit modal ── */
+  function populateEditForm() {
+    if (!employee) return;
+    const fDept = document.getElementById('fDept');
+    fDept.innerHTML = '<option value="">Select department</option>';
+    departments.forEach(d => {
+      fDept.insertAdjacentHTML('beforeend', `<option value="${d.id}" ${d.id === employee.department_id ? 'selected' : ''}>${esc(d.name)}</option>`);
+    });
+  }
+
+  function openEditModal() {
+    if (!employee) return;
+    document.getElementById('fName').value   = employee.full_name  || '';
+    document.getElementById('fEmail').value  = employee.email       || '';
+    document.getElementById('fPhone').value  = employee.phone       || '';
+    document.getElementById('fDesig').value  = employee.designation || '';
+    document.getElementById('fDept').value   = employee.department_id || '';
+    document.getElementById('fStatus').value = employee.status || 'active';
+    document.getElementById('editModal').classList.add('open');
+  }
+
+  function openConfirm() {
+    document.getElementById('confirmModal').classList.add('open');
+  }
+
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  document.querySelectorAll('.overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+  });
+
+  /* ── Save via n8n ── */
+  async function saveEmployee() {
+    const name  = document.getElementById('fName').value.trim();
+    const email = document.getElementById('fEmail').value.trim();
+    const phone = document.getElementById('fPhone').value.trim();
+    const dept  = document.getElementById('fDept').value;
+    const desig = document.getElementById('fDesig').value.trim();
+    const status= document.getElementById('fStatus').value;
+
+    if (!name || !email || !desig) { showToast('Please fill in all required fields.', 'error'); return; }
+
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    document.getElementById('saveBtnText').textContent = 'Saving...';
+
+    try {
+      const res = await apiFetch(`/employees/${empId}`, { method: 'PUT', body: JSON.stringify({ full_name: name, email, phone, department_id: dept || null, designation: desig, status }) });
+      const data = await res.json();
+
+      if (data.status === 'success' || res.ok) {
+        showToast('Employee updated successfully!', 'success');
+        closeModal('editModal');
+        await loadAll();
+      } else {
+        showToast(data.message || 'Something went wrong.', 'error');
+      }
+    } catch {
+      showToast('Connection error. Please try again.', 'error');
+    } finally {
+      btn.disabled = false;
+      document.getElementById('saveBtnText').textContent = 'Save changes';
+    }
+  }
+
+  /* ── Deactivate via n8n ── */
+  async function confirmDeactivate() {
+    closeModal('confirmModal');
+    try {
+      const res = await apiFetch(`/employees/${empId}/deactivate`, { method: 'PATCH' });
+      const data = await res.json();
+      if (data.status === 'success' || res.ok) {
+        showToast('Employee deactivated.', 'success');
+        await loadAll();
+      } else {
+        showToast(data.message || 'Failed to deactivate.', 'error');
+      }
+    } catch {
+      showToast('Connection error. Please try again.', 'error');
+    }
+  }
+
+  function logout() {
+    ['ems_token','ems_role','ems_user'].forEach(k => localStorage.removeItem(k));
+    window.location.href = 'login.html';
+  }
+
+  function esc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  loadAll();
+</script>
+</body>
+</html>

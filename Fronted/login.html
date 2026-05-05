@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMS — Sign In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-page:    #f0f0ec;
+    --bg-card:    #ffffff;
+    --bg-input:   #ffffff;
+    --bg-input-focus: #fafafa;
+    --border:     #e2e2de;
+    --border-focus: #0f0f0f;
+    --text-primary: #0f0f0f;
+    --text-secondary: #6b6b6b;
+    --text-muted:  #a8a8a4;
+    --left-bg:    #0f0f0f;
+    --left-text:  #ffffff;
+    --left-sub:   rgba(255,255,255,0.42);
+    --left-rule:  rgba(255,255,255,0.10);
+    --btn-bg:     #0f0f0f;
+    --btn-text:   #ffffff;
+    --error:      #c0392b;
+    --error-bg:   rgba(192,57,43,0.07);
+    --shadow:     0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    --toggle-bg:  #e2e2de;
+    --toggle-knob: #0f0f0f;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --transition: 0.22s ease;
+  }
+
+  [data-theme="dark"] {
+    --bg-page:    #111110;
+    --bg-card:    #1c1c1a;
+    --bg-input:   #242422;
+    --bg-input-focus: #2a2a28;
+    --border:     #2e2e2c;
+    --border-focus: #e8e8e4;
+    --text-primary: #f0f0ec;
+    --text-secondary: #a8a8a4;
+    --text-muted:  #5a5a58;
+    --left-bg:    #0a0a09;
+    --left-text:  #f0f0ec;
+    --left-sub:   rgba(240,240,236,0.38);
+    --left-rule:  rgba(240,240,236,0.08);
+    --btn-bg:     #f0f0ec;
+    --btn-text:   #0f0f0f;
+    --error:      #e05a4a;
+    --error-bg:   rgba(224,90,74,0.10);
+    --shadow:     0 1px 3px rgba(0,0,0,0.3), 0 4px 20px rgba(0,0,0,0.25);
+    --toggle-bg:  #2e2e2c;
+    --toggle-knob: #f0f0ec;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: var(--font);
+    background: var(--bg-page);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    transition: background var(--transition), color var(--transition);
+  }
+
+  .page {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* ── Left panel ── */
+  .left {
+    background: var(--left-bg);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 44px 48px;
+    position: relative;
+    overflow: hidden;
+    transition: background var(--transition);
+  }
+
+  .left::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 380px; height: 380px;
+    border-radius: 50%;
+    border: 1px solid var(--left-rule);
+    pointer-events: none;
+  }
+  .left::after {
+    content: '';
+    position: absolute;
+    bottom: -140px; left: -80px;
+    width: 460px; height: 460px;
+    border-radius: 50%;
+    border: 1px solid var(--left-rule);
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1;
+  }
+
+  .brand-icon {
+    width: 32px; height: 32px;
+    background: var(--left-text);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background var(--transition);
+  }
+
+  .brand-icon svg { width: 16px; height: 16px; }
+
+  .brand-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--left-text);
+    letter-spacing: 0.04em;
+    transition: color var(--transition);
+  }
+
+  .left-body { z-index: 1; }
+
+  .left-eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--left-sub);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .left-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 18px; height: 1px;
+    background: var(--left-sub);
+  }
+
+  .left-title {
+    font-size: 38px;
+    font-weight: 300;
+    color: var(--left-text);
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    margin-bottom: 18px;
+    transition: color var(--transition);
+  }
+
+  .left-title strong {
+    font-weight: 500;
+    font-style: italic;
+  }
+
+  .left-sub {
+    font-size: 14px;
+    color: var(--left-sub);
+    line-height: 1.65;
+    max-width: 290px;
+  }
+
+  .left-features {
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .feature-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-top: 1px solid var(--left-rule);
+    padding: 13px 0;
+  }
+
+  .feature-icon {
+    width: 28px; height: 28px;
+    border: 1px solid var(--left-rule);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .feature-icon svg { width: 12px; height: 12px; color: var(--left-sub); }
+
+  .feature-text {
+    font-size: 12px;
+    color: var(--left-sub);
+    line-height: 1.4;
+  }
+
+  /* ── Right panel ── */
+  .right {
+    background: var(--bg-page);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 40px;
+    position: relative;
+    transition: background var(--transition);
+  }
+
+  /* Dark mode toggle */
+  .theme-toggle {
+    position: absolute;
+    top: 28px; right: 28px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle-track {
+    width: 40px; height: 22px;
+    background: var(--toggle-bg);
+    border-radius: 100px;
+    position: relative;
+    transition: background var(--transition);
+    flex-shrink: 0;
+  }
+
+  .toggle-knob {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    background: var(--toggle-knob);
+    border-radius: 50%;
+    transition: transform var(--transition), background var(--transition);
+  }
+
+  [data-theme="dark"] .toggle-knob {
+    transform: translateX(18px);
+  }
+
+  .toggle-icon {
+    width: 14px; height: 14px;
+    color: var(--text-muted);
+    transition: color var(--transition);
+    flex-shrink: 0;
+  }
+
+  .form-card {
+    width: 100%;
+    max-width: 360px;
+    animation: fadeUp 0.45s cubic-bezier(.16,1,.3,1) both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .form-heading {
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+    letter-spacing: -0.025em;
+    transition: color var(--transition);
+  }
+
+  .form-sub {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    line-height: 1.5;
+    transition: color var(--transition);
+  }
+
+  .form-card-inner {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 26px;
+    box-shadow: var(--shadow);
+    transition: background var(--transition), border-color var(--transition), box-shadow var(--transition);
+  }
+
+  .field { margin-bottom: 16px; }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: color var(--transition);
+  }
+
+  .field input {
+    width: 100%;
+    height: 42px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 13px;
+    font-family: var(--font);
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--bg-input);
+    outline: none;
+    transition: border-color var(--transition), background var(--transition), box-shadow var(--transition), color var(--transition);
+  }
+
+  .field input::placeholder { color: var(--text-muted); }
+
+  .field input:focus {
+    border-color: var(--border-focus);
+    background: var(--bg-input-focus);
+    box-shadow: 0 0 0 3px rgba(15,15,15,0.08);
+  }
+
+  [data-theme="dark"] .field input:focus {
+    box-shadow: 0 0 0 3px rgba(240,240,236,0.07);
+  }
+
+  .field input.error { border-color: var(--error); background: var(--error-bg); }
+
+  .field-error {
+    font-size: 12px;
+    color: var(--error);
+    margin-top: 5px;
+    display: none;
+    transition: color var(--transition);
+  }
+
+  .field-error.show { display: block; }
+
+  .forgot {
+    text-align: right;
+    margin-top: -6px;
+    margin-bottom: 22px;
+  }
+
+  .forgot a {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color var(--transition);
+  }
+  .forgot a:hover { color: var(--text-primary); }
+
+  .btn {
+    width: 100%;
+    height: 42px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: opacity 0.15s, transform 0.1s, background var(--transition), color var(--transition);
+    letter-spacing: 0.01em;
+  }
+
+  .btn:hover { opacity: 0.87; }
+  .btn:active { transform: scale(0.99); }
+  .btn.loading { pointer-events: none; opacity: 0.6; }
+  .btn-text { transition: opacity 0.2s; }
+  .btn.loading .btn-text { opacity: 0; }
+
+  .spinner {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .btn.loading .spinner { opacity: 1; }
+  .spinner svg { width: 17px; height: 17px; animation: spin 0.75s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0 16px;
+    color: var(--text-muted);
+    font-size: 12px;
+    transition: color var(--transition);
+  }
+
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    transition: background var(--transition);
+  }
+
+  .roles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .role-pill {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    background: var(--bg-card);
+    transition: border-color var(--transition), background var(--transition);
+    text-align: left;
+  }
+
+  .role-pill:hover { border-color: var(--border-focus); background: var(--bg-input-focus); }
+
+  .role-pill-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 12px;
+    display: block;
+    margin-bottom: 1px;
+    transition: color var(--transition);
+  }
+
+  .role-pill-desc {
+    color: var(--text-muted);
+    font-size: 11px;
+    transition: color var(--transition);
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(70px);
+    padding: 11px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    white-space: nowrap;
+    z-index: 999;
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(.34,1.4,.64,1), opacity 0.3s;
+    display: flex; align-items: center; gap: 9px;
+    border: 1px solid transparent;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.success { background: #f0faf5; color: #1a7a4a; border-color: #a8dfc0; }
+  .toast.error   { background: #fdf2f2; color: #c0392b; border-color: #f0b8b8; }
+  [data-theme="dark"] .toast.success { background: #0d2418; color: #4dc484; border-color: #1a4a30; }
+  [data-theme="dark"] .toast.error   { background: #2a0e0e; color: #e07070; border-color: #4a1a1a; }
+  .toast svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+  @media (max-width: 800px) {
+    .page { grid-template-columns: 1fr; }
+    .left { display: none; }
+    .right { padding: 80px 24px 32px; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Left Panel -->
+  <div class="left">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 16 16" fill="none">
+          <rect x="1" y="1" width="6" height="6" rx="1.5" fill="#0f0f0f"/>
+          <rect x="9" y="1" width="6" height="6" rx="1.5" fill="#0f0f0f"/>
+          <rect x="1" y="9" width="6" height="6" rx="1.5" fill="#0f0f0f"/>
+          <rect x="9" y="9" width="6" height="6" rx="1.5" fill="#0f0f0f" opacity="0.3"/>
+        </svg>
+      </div>
+      <span class="brand-name">EMS</span>
+    </div>
+
+    <div class="left-body">
+      <div class="left-eyebrow">Employee Management System</div>
+      <h1 class="left-title">One place for<br>your <strong>entire team.</strong></h1>
+      <p class="left-sub">Track employees, manage leave requests, monitor attendance, and run payroll — all from a single dashboard built for HR teams.</p>
+    </div>
+
+    <div class="left-features">
+      <div class="feature-row">
+        <div class="feature-icon">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="2.5"/><path d="M1 13c0-2.76 2.24-5 5-5h1M11 10v4M9 12h4"/></svg>
+        </div>
+        <div class="feature-text">Employee records, departments &amp; designations</div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 2v2M11 2v2M2 7h12"/></svg>
+        </div>
+        <div class="feature-text">Leave requests with HR approval workflow</div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+        </div>
+        <div class="feature-text">Daily attendance tracking &amp; monthly reports</div>
+      </div>
+      <div class="feature-row">
+        <div class="feature-icon">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M1 7h14M5 11h2M10 11h1"/></svg>
+        </div>
+        <div class="feature-text">Payroll generation with salary structures</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right">
+
+    <!-- Dark mode toggle -->
+    <div class="theme-toggle" id="themeToggle" title="Toggle dark mode">
+      <svg class="toggle-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <circle cx="8" cy="8" r="3"/>
+        <path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/>
+      </svg>
+      <div class="toggle-track">
+        <div class="toggle-knob"></div>
+      </div>
+      <svg class="toggle-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M13.5 10A6 6 0 0 1 6 2.5a6 6 0 1 0 7.5 7.5z"/>
+      </svg>
+    </div>
+
+    <div class="form-card">
+      <h2 class="form-heading">Welcome back</h2>
+      <p class="form-sub">Sign in to your EMS account to continue.</p>
+
+      <div class="form-card-inner">
+        <form id="loginForm" novalidate>
+          <div class="field">
+            <label for="email">Email address</label>
+            <input type="email" id="email" placeholder="you@company.com" autocomplete="email">
+            <div class="field-error" id="emailErr">Please enter a valid email address.</div>
+          </div>
+
+          <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+            <div class="field-error" id="passErr">Password is required.</div>
+          </div>
+
+          <div class="forgot">
+            <a href="#">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="btn" id="loginBtn">
+            <span class="btn-text">Sign in</span>
+            <span class="spinner">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
+            </span>
+          </button>
+
+          <div class="divider">or sign in as</div>
+
+          <div class="roles">
+            <button type="button" class="role-pill" onclick="fillDemo('admin@ems.com','admin123')">
+              <span class="role-pill-label">Admin</span>
+              <span class="role-pill-desc">HR / full access</span>
+            </button>
+            <button type="button" class="role-pill" onclick="fillDemo('ali@ems.com','ali123')">
+              <span class="role-pill-label">Employee</span>
+              <span class="role-pill-desc">Self-service only</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <svg id="toastIcon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"></svg>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+  const API_BASE = 'http://localhost:3000/api';
+
+  /* ── Dark mode ── */
+  const html = document.documentElement;
+  const saved = localStorage.getItem('ems_theme') || 'light';
+  html.setAttribute('data-theme', saved);
+
+  document.getElementById('themeToggle').addEventListener('click', function() {
+    const isDark = html.getAttribute('data-theme') === 'dark';
+    const next = isDark ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('ems_theme', next);
+  });
+
+  /* ── Toast ── */
+  function showToast(msg, type = 'error') {
+    const t   = document.getElementById('toast');
+    const ico = document.getElementById('toastIcon');
+    document.getElementById('toastMsg').textContent = msg;
+    t.className = 'toast ' + type;
+    ico.innerHTML = type === 'success'
+      ? '<path d="M2 8l4 4 8-8" stroke-linecap="round" stroke-linejoin="round"/>'
+      : '<path d="M4 4l8 8M12 4l-8 8" stroke-linecap="round"/>';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+
+  /* ── Demo fill ── */
+  function fillDemo(email, pass) {
+    document.getElementById('email').value = email;
+    document.getElementById('password').value = pass;
+    document.getElementById('email').classList.remove('error');
+    document.getElementById('password').classList.remove('error');
+    document.getElementById('emailErr').classList.remove('show');
+    document.getElementById('passErr').classList.remove('show');
+  }
+
+  /* ── Validate ── */
+  function validate() {
+    let ok = true;
+    const email    = document.getElementById('email');
+    const pass     = document.getElementById('password');
+    const emailErr = document.getElementById('emailErr');
+    const passErr  = document.getElementById('passErr');
+    const emailRe  = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRe.test(email.value.trim())) {
+      email.classList.add('error'); emailErr.classList.add('show'); ok = false;
+    } else {
+      email.classList.remove('error'); emailErr.classList.remove('show');
+    }
+    if (!pass.value) {
+      pass.classList.add('error'); passErr.classList.add('show'); ok = false;
+    } else {
+      pass.classList.remove('error'); passErr.classList.remove('show');
+    }
+    return ok;
+  }
+
+  /* ── Submit ── */
+  document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!validate()) return;
+
+    const btn = document.getElementById('loginBtn');
+    btn.classList.add('loading');
+
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    try {
+      const res  = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.status === 'error') {
+        showToast(data.message || 'Invalid email or password.', 'error');
+        btn.classList.remove('loading');
+        return;
+      }
+
+      localStorage.setItem('ems_token', data.token);
+      localStorage.setItem('ems_role',  data.user?.role || 'viewer');
+      localStorage.setItem('ems_user',  JSON.stringify(data.user));
+      showToast('Signed in successfully!', 'success');
+      setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
+
+    } catch {
+      showToast('Connection error. Please try again.', 'error');
+      btn.classList.remove('loading');
+    }
+  });
+
+  /* ── Clear errors on input ── */
+  document.getElementById('email').addEventListener('input', function() {
+    this.classList.remove('error');
+    document.getElementById('emailErr').classList.remove('show');
+  });
+  document.getElementById('password').addEventListener('input', function() {
+    this.classList.remove('error');
+    document.getElementById('passErr').classList.remove('show');
+  });
+
+  /* ── Already logged in? ── */
+  if (localStorage.getItem('ems_token')) {
+    window.location.href = 'dashboard.html';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMS — Attendance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --black: #0f0f0f; --gray-600: #6b6b6b; --gray-400: #a0a0a0;
+    --gray-200: #e8e8e8; --gray-100: #f4f4f4; --white: #ffffff;
+    --success-bg: #f0faf5; --success-text: #1a7a4a; --success-border: #a8dfc0;
+    --error-bg: #fdf2f2; --error-text: #c0392b; --error-border: #f0b8b8;
+    --warn-bg: #fffbeb; --warn-text: #b45309; --warn-border: #fcd34d;
+    --blue-bg: #eff6ff; --blue-text: #1d4ed8; --blue-border: #bfdbfe;
+    --radius: 8px; --font: 'DM Sans', sans-serif; --mono: 'DM Mono', monospace; --sidebar: 220px;
+  }
+  html, body { height: 100%; font-family: var(--font); background: var(--gray-100); color: var(--black); -webkit-font-smoothing: antialiased; }
+  .layout { display: grid; grid-template-columns: var(--sidebar) 1fr; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar { background: var(--white); border-right: 1px solid var(--gray-200); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+  .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 20px 20px 16px; border-bottom: 1px solid var(--gray-200); }
+  .brand-icon { width: 28px; height: 28px; background: var(--black); border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .brand-icon svg { width: 14px; height: 14px; }
+  .brand-name { font-size: 13px; font-weight: 500; }
+  .sidebar-nav { padding: 12px 10px; flex: 1; }
+  .nav-label { font-size: 10px; font-weight: 500; color: var(--gray-400); letter-spacing: 0.08em; text-transform: uppercase; padding: 0 10px; margin: 16px 0 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; font-size: 13px; color: var(--gray-600); cursor: pointer; text-decoration: none; transition: background 0.12s, color 0.12s; margin-bottom: 1px; }
+  .nav-item:hover { background: var(--gray-100); color: var(--black); }
+  .nav-item.active { background: var(--gray-100); color: var(--black); font-weight: 500; }
+  .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.6; }
+  .nav-item.active svg { opacity: 1; }
+  .sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--gray-200); }
+  .user-row { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 30px; height: 30px; background: var(--black); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; color: var(--white); flex-shrink: 0; }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 12px; font-weight: 500; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role-text { font-size: 11px; color: var(--gray-400); }
+  .logout-btn { background: none; border: none; cursor: pointer; padding: 4px; color: var(--gray-400); transition: color 0.15s; }
+  .logout-btn:hover { color: var(--black); }
+  .logout-btn svg { width: 14px; height: 14px; display: block; }
+
+  /* Main */
+  .main { display: flex; flex-direction: column; }
+  .topbar { background: var(--white); border-bottom: 1px solid var(--gray-200); padding: 0 28px; height: 56px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .topbar-title { font-size: 15px; font-weight: 500; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+  .btn-primary { height: 34px; padding: 0 16px; background: var(--black); color: var(--white); border: none; border-radius: 6px; font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: opacity 0.15s; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-secondary { height: 34px; padding: 0 14px; background: none; color: var(--gray-600); border: 1px solid var(--gray-200); border-radius: 6px; font-family: var(--font); font-size: 13px; cursor: pointer; transition: border-color 0.15s, color 0.15s; display: flex; align-items: center; gap: 6px; }
+  .btn-secondary:hover { border-color: var(--black); color: var(--black); }
+
+  .content { padding: 24px 28px; flex: 1; overflow-y: auto; }
+
+  /* Stats */
+  .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 16px 18px; }
+  .stat-label { font-size: 11px; color: var(--gray-400); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 6px; }
+  .stat-value { font-size: 24px; font-weight: 500; font-family: var(--mono); }
+  .stat-card.present .stat-value  { color: var(--success-text); }
+  .stat-card.absent .stat-value   { color: var(--error-text); }
+  .stat-card.late .stat-value     { color: var(--warn-text); }
+  .stat-card.on-leave .stat-value { color: var(--blue-text); }
+
+  /* Date picker toolbar */
+  .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .date-input { height: 36px; border: 1px solid var(--gray-200); border-radius: 6px; padding: 0 12px; font-family: var(--font); font-size: 13px; color: var(--black); background: var(--white); outline: none; }
+  .date-input:focus { border-color: var(--black); }
+  .tab-row { display: flex; gap: 4px; background: var(--gray-100); padding: 3px; border-radius: 8px; }
+  .tab { padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; background: none; color: var(--gray-600); font-family: var(--font); transition: background 0.12s, color 0.12s; }
+  .tab.active { background: var(--white); color: var(--black); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  /* Attendance table */
+  .table-wrap { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead { border-bottom: 1px solid var(--gray-200); }
+  th { text-align: left; font-size: 11px; font-weight: 500; color: var(--gray-400); letter-spacing: 0.06em; text-transform: uppercase; padding: 12px 16px; background: var(--gray-100); white-space: nowrap; }
+  td { padding: 11px 16px; font-size: 13px; border-bottom: 1px solid var(--gray-200); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+
+  .emp-name { font-weight: 500; }
+  .emp-sub  { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
+
+  .badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .badge-present  { background: var(--success-bg); color: var(--success-text); }
+  .badge-absent   { background: var(--error-bg);   color: var(--error-text); }
+  .badge-late     { background: var(--warn-bg);     color: var(--warn-text); }
+  .badge-on-leave { background: var(--blue-bg);     color: var(--blue-text); }
+  .badge-unmarked { background: var(--gray-100);    color: var(--gray-400); }
+
+  /* Status selector inline */
+  .status-select { height: 30px; border: 1px solid var(--gray-200); border-radius: 5px; padding: 0 8px; font-family: var(--font); font-size: 12px; color: var(--black); background: var(--white); outline: none; cursor: pointer; }
+  .status-select:focus { border-color: var(--black); }
+  .time-input { height: 30px; width: 90px; border: 1px solid var(--gray-200); border-radius: 5px; padding: 0 8px; font-family: var(--mono); font-size: 12px; color: var(--black); background: var(--white); outline: none; }
+  .time-input:focus { border-color: var(--black); }
+
+  /* Monthly view */
+  .month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .month-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 16px 18px; }
+  .month-card-name { font-size: 14px; font-weight: 500; margin-bottom: 10px; }
+  .month-bars { display: flex; flex-direction: column; gap: 6px; }
+  .month-bar-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .month-bar-label { width: 60px; color: var(--gray-600); flex-shrink: 0; }
+  .month-bar-track { flex: 1; height: 6px; background: var(--gray-100); border-radius: 3px; overflow: hidden; }
+  .month-bar-fill { height: 100%; border-radius: 3px; }
+  .month-bar-count { width: 24px; text-align: right; color: var(--black); font-family: var(--mono); font-size: 11px; }
+
+  .empty { text-align: center; padding: 60px 20px; color: var(--gray-400); }
+  .empty svg { width: 36px; height: 36px; margin-bottom: 12px; opacity: 0.3; }
+  .empty-title { font-size: 14px; font-weight: 500; color: var(--gray-600); margin-bottom: 4px; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 16px; border-radius: var(--radius); font-size: 13px; z-index: 999; opacity: 0; transform: translateY(12px); transition: opacity 0.25s, transform 0.25s; display: flex; align-items: center; gap: 10px; max-width: 320px; border: 1px solid transparent; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: var(--success-bg); color: var(--success-text); border-color: var(--success-border); }
+  .toast.error   { background: var(--error-bg);   color: var(--error-text);   border-color: var(--error-border); }
+  .toast svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  body.viewer .admin-only { display: none !important; }
+  @media (max-width: 900px) { .stats-row { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } .sidebar { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1.2" fill="white"/><rect x="8" y="1" width="5" height="5" rx="1.2" fill="white"/><rect x="1" y="8" width="5" height="5" rx="1.2" fill="white"/><rect x="8" y="8" width="5" height="5" rx="1.2" fill="white" opacity="0.3"/></svg>
+      </div>
+      <span class="brand-name">EMS</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Main</div>
+      <a href="dashboard.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="employees.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="2.5"/><path d="M1 13c0-2.76 2.24-5 5-5h1M11 10v4M9 12h4"/></svg>
+        Employees
+      </a>
+      <a href="departments.html" class="nav-item admin-only">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="6" width="4" height="8" rx="1"/><rect x="6" y="3" width="4" height="11" rx="1"/><rect x="11" y="1" width="4" height="13" rx="1"/></svg>
+        Departments
+      </a>
+      <a href="leaves.html" class="nav-item">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 2v2M11 2v2M2 7h12"/></svg>
+        Leave Requests
+      </a>
+      <a href="attendance.html" class="nav-item active">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+        Attendance
+      </a>
+      <a href="payroll.html" class="nav-item admin-only">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M1 7h14M5 11h2M10 11h1"/></svg>
+        Payroll
+      </a>
+      <div class="nav-label">Reports</div>
+      <a href="#" class="nav-item admin-only" onclick="exportCSV()">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h7l3 3v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M10 2v4h4M6 9l2 2 2-2M8 11V7"/></svg>
+        Export CSV
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-row">
+        <div class="avatar" id="avatarInitials">?</div>
+        <div class="user-info">
+          <div class="user-name" id="userName">Loading...</div>
+          <div class="user-role-text" id="userRole">—</div>
+        </div>
+        <button class="logout-btn" onclick="logout()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l3-3-3-3M14 8H6"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title">Attendance</span>
+      <div class="topbar-right">
+        <div class="tab-row">
+          <button class="tab active" id="tabDaily"   onclick="switchTab('daily')">Daily</button>
+          <button class="tab"        id="tabMonthly" onclick="switchTab('monthly')">Monthly Report</button>
+        </div>
+        <button class="btn-primary admin-only" id="saveAllBtn" onclick="saveAll()" style="display:none">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8l4 4 8-8"/></svg>
+          Save attendance
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Stats (admin only) -->
+      <div class="stats-row admin-only" id="statsRow">
+        <div class="stat-card"><div class="stat-label">Total employees</div><div class="stat-value" id="statTotal">—</div></div>
+        <div class="stat-card present"><div class="stat-label">Present today</div><div class="stat-value" id="statPresent">—</div></div>
+        <div class="stat-card absent"><div class="stat-label">Absent</div><div class="stat-value" id="statAbsent">—</div></div>
+        <div class="stat-card late"><div class="stat-label">Late</div><div class="stat-value" id="statLate">—</div></div>
+        <div class="stat-card on-leave"><div class="stat-label">On leave</div><div class="stat-value" id="statLeave">—</div></div>
+      </div>
+
+      <!-- Daily view -->
+      <div id="dailyView">
+        <div class="toolbar">
+          <input type="date" class="date-input" id="dateInput" onchange="loadDaily()">
+          <span style="font-size:13px;color:var(--gray-600)" id="dateLabel"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Department</th>
+                <th class="admin-only">Status</th>
+                <th class="admin-only">Check In</th>
+                <th class="admin-only">Check Out</th>
+                <th id="viewerStatusHead">Status</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceBody">
+              <tr><td colspan="6" style="text-align:center;padding:48px;color:var(--gray-400);font-size:13px">Loading attendance...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Monthly view -->
+      <div id="monthlyView" style="display:none">
+        <div class="toolbar">
+          <input type="month" class="date-input" id="monthInput" onchange="loadMonthly()">
+          <span style="font-size:13px;color:var(--gray-600)" id="monthSummary"></span>
+        </div>
+        <div class="month-grid" id="monthGrid">
+          <div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gray-400);font-size:13px">Select a month to view report</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <svg id="toastIcon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"></svg>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+  const API_BASE = 'http://localhost:3000/api';
+  const token    = localStorage.getItem('ems_token');
+  const role     = localStorage.getItem('ems_role') || 'viewer';
+
+  if (!token) window.location.href = 'login.html';
+  if (role === 'viewer') {
+    document.body.classList.add('viewer');
+    // For viewer: hide admin status col, show viewer status col
+    document.getElementById('viewerStatusHead').style.display = '';
+  } else {
+    document.getElementById('viewerStatusHead').style.display = 'none';
+    document.getElementById('saveAllBtn').style.display = 'flex';
+  }
+
+  const userObj = JSON.parse(localStorage.getItem('ems_user') || '{}');
+  const uEmail  = userObj.email || '';
+  document.getElementById('avatarInitials').textContent = uEmail.slice(0,2).toUpperCase();
+  document.getElementById('userName').textContent = uEmail;
+  document.getElementById('userRole').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+
+  // Set today's date
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('dateInput').value = today;
+  const now = new Date().toISOString().slice(0,7);
+  document.getElementById('monthInput').value = now;
+
+  let currentTab   = 'daily';
+  let attendanceData = [];
+
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    document.getElementById('toastIcon').innerHTML = type === 'success'
+      ? '<path d="M2 8l4 4 8-8"/>' : '<path d="M3 3l10 10M13 3L3 13"/>';
+    t.className = 'toast ' + type;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+
+  async function apiFetch(path, opts = {}) {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...opts,
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, ...(opts.headers||{}) }
+    });
+    if (res.status === 401) { logout(); return null; }
+    return res;
+  }
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('dailyView').style.display   = tab === 'daily'   ? 'block' : 'none';
+    document.getElementById('monthlyView').style.display = tab === 'monthly' ? 'block' : 'none';
+    document.getElementById('tabDaily').classList.toggle('active',   tab === 'daily');
+    document.getElementById('tabMonthly').classList.toggle('active', tab === 'monthly');
+    document.getElementById('saveAllBtn').style.display  = (tab === 'daily' && role === 'admin') ? 'flex' : 'none';
+    if (tab === 'monthly') loadMonthly();
+  }
+
+  async function loadStats() {
+    if (role !== 'admin') return;
+    const res = await apiFetch('/attendance/stats');
+    if (!res) return;
+    const json = await res.json();
+    if (json.status === 'success') {
+      const d = json.data;
+      document.getElementById('statTotal').textContent   = d.total_employees;
+      document.getElementById('statPresent').textContent = d.present;
+      document.getElementById('statAbsent').textContent  = d.absent;
+      document.getElementById('statLate').textContent    = d.late;
+      document.getElementById('statLeave').textContent   = d.on_leave;
+    }
+  }
+
+  async function loadDaily() {
+    const date = document.getElementById('dateInput').value;
+    const label = document.getElementById('dateLabel');
+    label.textContent = date === today ? 'Today' : new Date(date).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+    const res = await apiFetch(`/attendance?date=${date}`);
+    if (!res) return;
+    const json = await res.json();
+    attendanceData = json.data || [];
+    renderDaily(attendanceData, date);
+  }
+
+  function renderDaily(data, date) {
+    const tbody = document.getElementById('attendanceBody');
+    if (!data.length) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        <div class="empty-title">No employees found</div>
+      </div></td></tr>`;
+      return;
+    }
+
+    if (role === 'admin') {
+      tbody.innerHTML = data.map(e => {
+        const status    = e.status || 'present';
+        const checkIn   = e.check_in  || '';
+        const checkOut  = e.check_out || '';
+        return `<tr>
+          <td><div class="emp-name">${esc(e.full_name)}</div></td>
+          <td><span style="font-size:12px;color:var(--gray-600)">${esc(e.department_name||'—')}</span></td>
+          <td>
+            <select class="status-select" data-emp="${e.employee_id}" onchange="updateBadge(this)">
+              <option value="present"  ${status==='present'  ?'selected':''}>Present</option>
+              <option value="absent"   ${status==='absent'   ?'selected':''}>Absent</option>
+              <option value="late"     ${status==='late'     ?'selected':''}>Late</option>
+              <option value="on-leave" ${status==='on-leave' ?'selected':''}>On Leave</option>
+            </select>
+          </td>
+          <td><input type="time" class="time-input" data-emp="${e.employee_id}" data-field="check_in"  value="${checkIn}"></td>
+          <td><input type="time" class="time-input" data-emp="${e.employee_id}" data-field="check_out" value="${checkOut}"></td>
+          <td></td>
+        </tr>`;
+      }).join('');
+    } else {
+      // Viewer sees their own record read-only
+      tbody.innerHTML = data.map(e => `
+        <tr>
+          <td><div class="emp-name">${esc(e.full_name)}</div></td>
+          <td>${esc(e.department_name||'—')}</td>
+          <td></td><td></td><td></td>
+          <td><span class="badge badge-${e.status||'unmarked'}">${e.status||'Not marked'}</span></td>
+        </tr>`).join('');
+    }
+  }
+
+  async function saveAll() {
+    const date    = document.getElementById('dateInput').value;
+    const selects = document.querySelectorAll('.status-select');
+    const records = [];
+
+    selects.forEach(sel => {
+      const empId   = sel.getAttribute('data-emp');
+      const status  = sel.value;
+      const checkIn  = document.querySelector(`.time-input[data-emp="${empId}"][data-field="check_in"]`)?.value  || null;
+      const checkOut = document.querySelector(`.time-input[data-emp="${empId}"][data-field="check_out"]`)?.value || null;
+      records.push({ employee_id: empId, status, check_in: checkIn, check_out: checkOut });
+    });
+
+    if (!records.length) { showToast('No employees to mark.', 'error'); return; }
+
+    const btn = document.getElementById('saveAllBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2"><path d="M2 8l4 4 8-8"/></svg> Saving...';
+
+    try {
+      const res  = await apiFetch('/attendance/mark-all', { method: 'POST', body: JSON.stringify({ date, records }) });
+      const data = await res.json();
+      if (data.status === 'success') {
+        showToast(data.message, 'success');
+        await loadStats();
+      } else {
+        showToast(data.message, 'error');
+      }
+    } catch {
+      showToast('Connection error.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2"><path d="M2 8l4 4 8-8"/></svg> Save attendance';
+    }
+  }
+
+  async function loadMonthly() {
+    const month = document.getElementById('monthInput').value;
+    if (!month) return;
+
+    const res = await apiFetch(`/attendance/monthly?month=${month}`);
+    if (!res) return;
+    const json = await res.json();
+    const data    = json.data    || [];
+    const summary = json.summary || {};
+
+    document.getElementById('monthSummary').textContent =
+      `${summary.total||0} records — Present: ${summary.present||0}, Absent: ${summary.absent||0}, Late: ${summary.late||0}, On Leave: ${summary.leave||0}`;
+
+    if (role === 'admin') {
+      // Group by employee
+      const byEmp = {};
+      data.forEach(r => {
+        if (!byEmp[r.full_name]) byEmp[r.full_name] = { name: r.full_name, dept: r.department_name, present:0, absent:0, late:0, leave:0, total:0 };
+        byEmp[r.full_name][r.status === 'on-leave' ? 'leave' : r.status]++;
+        byEmp[r.full_name].total++;
+      });
+
+      const grid = document.getElementById('monthGrid');
+      const emps = Object.values(byEmp);
+      if (!emps.length) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gray-400);font-size:13px">No attendance records for this month.</div>'; return; }
+
+      grid.innerHTML = emps.map(e => {
+        const max = Math.max(e.present, e.absent, e.late, e.leave, 1);
+        return `<div class="month-card">
+          <div class="month-card-name">${esc(e.name)} <span style="font-size:11px;color:var(--gray-400);font-weight:400">${esc(e.dept||'')}</span></div>
+          <div class="month-bars">
+            <div class="month-bar-row"><span class="month-bar-label">Present</span><div class="month-bar-track"><div class="month-bar-fill" style="width:${e.present/max*100}%;background:var(--success-text)"></div></div><span class="month-bar-count">${e.present}</span></div>
+            <div class="month-bar-row"><span class="month-bar-label">Absent</span><div class="month-bar-track"><div class="month-bar-fill" style="width:${e.absent/max*100}%;background:var(--error-text)"></div></div><span class="month-bar-count">${e.absent}</span></div>
+            <div class="month-bar-row"><span class="month-bar-label">Late</span><div class="month-bar-track"><div class="month-bar-fill" style="width:${e.late/max*100}%;background:var(--warn-text)"></div></div><span class="month-bar-count">${e.late}</span></div>
+            <div class="month-bar-row"><span class="month-bar-label">On Leave</span><div class="month-bar-track"><div class="month-bar-fill" style="width:${e.leave/max*100}%;background:var(--blue-text)"></div></div><span class="month-bar-count">${e.leave}</span></div>
+          </div>
+        </div>`;
+      }).join('');
+    } else {
+      // Viewer sees their own month as a list
+      const grid = document.getElementById('monthGrid');
+      if (!data.length) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--gray-400);font-size:13px">No records for this month.</div>'; return; }
+      grid.innerHTML = `<div style="grid-column:1/-1">
+        <div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Status</th><th>Check In</th><th>Check Out</th></tr></thead>
+          <tbody>${data.map(r => `<tr>
+            <td>${new Date(r.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</td>
+            <td><span class="badge badge-${r.status}">${r.status}</span></td>
+            <td style="font-family:var(--mono);font-size:12px">${r.check_in||'—'}</td>
+            <td style="font-family:var(--mono);font-size:12px">${r.check_out||'—'}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+      </div>`;
+    }
+  }
+
+  function exportCSV() {
+    if (!attendanceData.length) { showToast('Load attendance data first.', 'error'); return; }
+    const date = document.getElementById('dateInput').value;
+    const headers = ['Employee', 'Department', 'Status', 'Check In', 'Check Out'];
+    const rows = attendanceData.map(e => [e.full_name, e.department_name||'', e.status||'not marked', e.check_in||'', e.check_out||''].map(v => `"${v}"`).join(','));
+    const csv  = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `attendance_${date}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV exported!', 'success');
+  }
+
+  function esc(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function logout() {
+    ['ems_token','ems_role','ems_user'].forEach(k => localStorage.removeItem(k));
+    window.location.href = 'login.html';
+  }
+
+  // Init
+  (async () => {
+    await Promise.all([loadStats(), loadDaily()]);
+  })();
+</script>
+</body>
+</html>
