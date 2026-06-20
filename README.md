@@ -103,3 +103,4 @@ Open `Fronted/login.html` directly in your browser.
 | Admin (HR) | `admin@ems.com` | `admin123` |
 | Employee | `ali@ems.com` | `ali123` |
 | Employee | `sara@ems.com` | `sara123` |
+
