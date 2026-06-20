@@ -62,8 +62,6 @@ A full-stack web application for managing employees, leave requests, attendance,
 
 ## How to Run a project
 
-## Getting Started
-
 ### Prerequisites
 - [Node.js](https://nodejs.org/) v18 or higher
 
